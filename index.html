@@ -556,7 +556,9 @@ async function doLogin() {
   const result = await validatePandaKey(key);
 
   if (!result.valid) {
-    showErr('login-err', result.note || 'Key inválida!');
+    // Mostra debug completo na tela para mobile
+    const debugInfo = result.debug ? '\n\nDEBUG: ' + JSON.stringify(result.debug, null, 2) : '';
+    showErr('login-err', (result.note || 'Key inválida!') + debugInfo);
     btn.classList.remove('loading'); btn.disabled = false;
     return;
   }
@@ -631,6 +633,7 @@ function renderExpire() {
   const fill  = document.getElementById('expire-fill');
   const badge = document.getElementById('badge-expire');
 
+  // Lifetime
   if (!exp || exp === 'Lifetime' || exp === 'lifetime') {
     expEl.textContent = 'Vitalício ♾️';
     fill.style.width  = '100%';
@@ -639,10 +642,18 @@ function renderExpire() {
     return;
   }
 
-  // Formato PandaDev: "MM/DD/YY HH:MM"
+  // O proxy já retorna ISO string — new Date() funciona direto
   const expDate = new Date(exp);
-  const now     = new Date();
-  const leftMs  = expDate - now;
+  if (isNaN(expDate.getTime())) {
+    // Não conseguiu parsear: mostra o valor bruto
+    expEl.textContent = exp;
+    badge.textContent = '📅 ' + exp;
+    fill.style.width  = '50%';
+    return;
+  }
+
+  const now    = new Date();
+  const leftMs = expDate - now;
 
   if (leftMs <= 0) {
     expEl.textContent = 'Expirada';
